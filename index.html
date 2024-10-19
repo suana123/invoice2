@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h2 {
+            text-align: center;
+            color: #34495E;
+            margin-bottom: 20px;
+        }
+        #invoiceForm {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+        label {
+            font-weight: bold;
+            color: #2C3E50;
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #BDC3C7;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #3498DB;
+            outline: none;
+        }
+        button {
+            background-color: #3498DB;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980B9;
+        }
+        #successMessage {
+            text-align: center;
+            color: green;
+            margin-top: 20px;
+            display: none; /* Hide initially */
+        }
+        #downloadButton {
+            display: none; /* Hide initially */
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Madina Daal Mill Invoice Form</h2>
+<form id="invoiceForm">
+    <label for="customerName">Customer Name:</label>
+    <input type="text" id="customerName" required>
+    
+    <label for="itemDetails">Item Details:</label>
+    <input type="text" id="itemDetails" required>
+    
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" required>
+    
+    <label for="price">Price (per item):</label>
+    <input type="number" id="price" required>
+    
+    <button type="submit">Submit Invoice</button>
+</form>
+
+<div id="successMessage">Submitted successfully!</div>
+<button id="downloadButton">Download Invoice</button>
+
+<script>
+    let invoiceData = null; // Variable to hold invoice data
+
+    document.getElementById('invoiceForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const customerName = document.getElementById('customerName').value;
+        const itemDetails = document.getElementById('itemDetails').value;
+        const quantity = parseFloat(document.getElementById('quantity').value);
+        const price = parseFloat(document.getElementById('price').value);
+        const total = (quantity * price).toFixed(2);
+
+        // Store invoice data
+        invoiceData = {
+            customerName,
+            itemDetails,
+            quantity,
+            price,
+            total
+        };
+
+        // Show success message
+        document.getElementById('successMessage').style.display = 'block';
+        document.getElementById('downloadButton').style.display = 'block';
+    });
+
+    document.getElementById('downloadButton').addEventListener('click', function() {
+        if (invoiceData) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Title and Logo
+            doc.setFontSize(22);
+            doc.setTextColor(0, 51, 102); // Dark Blue
+            doc.text("Madina Daal Mill", 105, 20, null, null, 'center');
+            
+            // Address and Contact
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text("Address: 1234 Daal Road, City, Country", 105, 30, null, null, 'center');
+            doc.text("Contact: +123-456-7890", 105, 35, null, null, 'center');
+            
+            // Customer Name Box
+            doc.setFontSize(14);
+            doc.setTextColor(0, 51, 102);
+            doc.text(`Customer Name: ${invoiceData.customerName}`, 10, 50);
+
+            // Line
+            doc.setLineWidth(0.5);
+            doc.line(10, 55, 200, 55);
+            
+            // Invoice Number and Date
+            doc.setFontSize(12);
+            doc.text(`Invoice Number: INV-${Math.floor(Math.random() * 10000)}`, 10, 65);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 10, 75);
+            
+            // Invoice Details Header
+            doc.setFontSize(14);
+            doc.setTextColor(0, 51, 102); // Dark Blue
+            doc.text("Invoice Details", 10, 85);
+            doc.setFontSize(12);
+            
+            // Table for Items
+            doc.autoTable({
+                head: [['User Name', 'Item Details', 'Quantity', 'Price', 'Total']],
+                body: [[invoiceData.customerName, invoiceData.itemDetails, invoiceData.quantity, invoiceData.price.toFixed(2), invoiceData.total]],
+                startY: 90,
+                styles: { fillColor: '#f9f9f9', textColor: '#2C3E50', fontSize: 10 },
+                headStyles: { fillColor: '#3498DB', textColor: '#fff', fontSize: 12 },
+                alternateRowStyles: { fillColor: '#f2f2f2' },
+                margin: { horizontal: 10 },
+                theme: 'striped',
+            });
+
+            // Add Payment Done Stamp
+            const imgData = 'https://png.pngtree.com/png-vector/20230208/ourmid/pngtree-paid-stamp-vector-illustration-png-image_6585127.png';  
+            const stampX = 60; // X position of the stamp
+            const stampY = doc.lastAutoTable.finalY + 20; // Y position of the stamp
+            const stampWidth = 50; // Width of the stamp
+            const stampHeight = 50; // Height of the stamp
+
+            doc.addImage(imgData, 'PNG', stampX, stampY, stampWidth, stampHeight);
+            
+            // Footer
+            doc.setFontSize(10);
+            doc.setTextColor(0); // Black color
+            doc.text("Thank you for your business!", 10, doc.lastAutoTable.finalY + 80);
+            doc.text("For any inquiries, please contact us at: contact@madinadaalmill.com", 10, doc.lastAutoTable.finalY + 90);
+            
+            // Save the PDF
+            doc.save(`invoice_${invoiceData.customerName}.pdf`);
+        }
+    });
+</script>
+
+</body>
+</html>
